@@ -239,7 +239,7 @@
   }
 
   .io-arrow {
-    font-size: 2rem;
+    font-size: 4rem;
     color: #666666;
   }
 
@@ -248,13 +248,13 @@
     border-radius: 15px;
     width: 30%;
     margin-right: 2rem;
-    background-color: #e9e9e9;
+    background-color: var(--bs-secondary-bg);
   }
 
   .steps {
     padding: 1rem;
     border-radius: 15px;
-    background-color: #e9e9e9;
+    background-color: var(--bs-secondary-bg);
     width: 70%;
   }
 </style>
