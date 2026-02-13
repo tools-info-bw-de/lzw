@@ -41,8 +41,6 @@
   });
 
   function compress() {
-    console.log("effect", input);
-
     // remove all whitespace characters from input
     input = input.replace(/\s/g, "");
 
@@ -57,7 +55,6 @@
     // input all used iso-8859-1 characters from input into the dictionary
     dictionary = [];
     input.split("").forEach((element) => {
-      console.log(element);
       if (!dictionary.some((entry) => entry.char === element)) {
         dictionary.push({
           char: element,
@@ -151,11 +148,11 @@
   >
     <span aria-hidden="true">→</span>
   </div>
-  <div class="col-md-5 text-end resultBox">
+  <div class="col-md-5 text-start resultBox">
     <div class="fw-semibold fs-5">
       Ausgabe <i style="font-size: 0.8rem; font-weight: normal">(hex)</i>
     </div>
-    <code class="output-code">
+    <code class="output-code fs-4">
       <b>
         {#if outputSteps.length > 0}
           {#each outputSteps as item, idx}

@@ -3,6 +3,7 @@
   import * as bootstrap from "bootstrap";
 
   import Compress from "./lib/Compress.svelte";
+  import Decompress from "./lib/Decompress.svelte";
 
   let compression = $state(true);
 
@@ -27,7 +28,7 @@
     target="_blank"
     href="https://lehrerfortbildung-bw.de/u_matnatech/informatik/gym/bp2016/fb2/01_duc/2_vorlagen/4_lzw/"
     >Materialien vom ZSL BW</a
-  >
+  >.
 
   <ul class="text-start mt-3">
     <li>
@@ -64,16 +65,7 @@
   {#if compression}
     <Compress />
   {:else}
-    <p>
-      Hier kannst du eine komprimierte Zeichenfolge eingeben, die dekomprimiert
-      werden soll. Es werden nur die ersten 256 Zeichen der Eingabe
-      berücksichtigt.
-    </p>
-    <textarea
-      class="form-control"
-      rows="5"
-      placeholder="Gib hier deine komprimierte Zeichenfolge ein..."
-    ></textarea>
+    <Decompress />
   {/if}
 </main>
 
