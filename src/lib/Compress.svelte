@@ -1,4 +1,5 @@
 <script>
+  import { onMount } from "svelte";
   import { slide } from "svelte/transition";
 
   let input = $state("");
@@ -6,6 +7,38 @@
   let inputNotAllowed = $state(false);
   let dictionary = $state([]);
   let steps = $state([]);
+  let hoveredStepIndex = $state(null);
+  let hoveredDictCode = $state(null);
+
+  let outputSteps = $derived(
+    steps
+      .map((s, index) => ({
+        code: s[4],
+        index,
+      }))
+      .filter((item) => item.code !== "–"),
+  );
+
+  function getStepPopupText(step) {
+    return step[2] === "Wortende"
+      ? "Ausgabe, weil das Wortende erreicht ist."
+      : "Ausgabe, weil ein neuer Wörterbuch-Eintrag erstellt wurde.";
+  }
+
+  function shouldShowLastCharNotice(step, index) {
+    const previousStep = steps[index - 1];
+    return Boolean(previousStep && previousStep[3] !== "–");
+  }
+
+  function getPreviousCurrentChar(index) {
+    const previousStep = steps[index - 1];
+    return previousStep ? previousStep[2] : "–";
+  }
+
+  onMount(() => {
+    // @ts-ignore
+    document.querySelector("#inputEncode").focus();
+  });
 
   function compress() {
     console.log("effect", input);
@@ -76,19 +109,17 @@
       }
     }
 
-    //if (outputCode === "") {
     steps.push({
       1: lastEntry,
       2: "Wortende",
       3: "–",
       4: dictionary.find((entry) => entry.char === lastEntry)?.code || "–",
     });
-    //}
   }
 </script>
 
 <div class="row mb-4">
-  <div class="col-md-6 text-start">
+  <div class="col-md-5 text-start">
     <label for="inputEncode" class="form-label fw-semibold fs-5"
       >Eingabe <i class="text-muted ms-2 fs-6 fw-normal"
         >Groß-/Kleinschreibung beachten!</i
@@ -115,19 +146,37 @@
     Länge: {input.length} Zeichen<br />
     <b>Speicherplatz: {input.length} Bytes</b>
   </div>
-  <div class="col-md-6 text-end resultBox">
+  <div
+    class="col-md-2 d-flex align-items-center justify-content-center io-arrow"
+  >
+    <span aria-hidden="true">→</span>
+  </div>
+  <div class="col-md-5 text-end resultBox">
     <div class="fw-semibold fs-5">
       Ausgabe <i style="font-size: 0.8rem; font-weight: normal">(hex)</i>
     </div>
-    <code
-      ><b>
-        {steps.length > 0
-          ? steps
-              .map((s) => s[4])
-              .filter((code) => code !== "–")
-              .map((code) => code.padStart(3, "0"))
-              .join(" ")
-          : ""}
+    <code class="output-code">
+      <b>
+        {#if outputSteps.length > 0}
+          {#each outputSteps as item, idx}
+            {#if idx > 0}
+              {" "}
+            {/if}
+            <span
+              role="button"
+              tabindex="0"
+              class:hovered={hoveredStepIndex === item.index}
+              onmouseenter={() => {
+                hoveredStepIndex = item.index;
+                hoveredDictCode = item.code;
+              }}
+              onmouseleave={() => {
+                hoveredStepIndex = null;
+                hoveredDictCode = null;
+              }}>{item.code.padStart(3, "0")}</span
+            >
+          {/each}
+        {/if}
       </b>
     </code>
     <br />
@@ -144,7 +193,16 @@
 
 <div class="d-flex flex-row">
   <div class="d-flex flex-column dictionary">
-    <h3>Wörterbuch</h3>
+    <h3>
+      Wörterbuch
+      <span class="help-popup" aria-label="Erklärung zum Wörterbuch">
+        ?
+        <span class="popup-bubble" aria-hidden="true">
+          {@html "Zeigt alle bisher bekannten Zeichen und <em>Zeichenfolgen</em> mit ihren Hex-Codes.<br/>Bis zu <code>0FF</code> (Zeichen ÿ) entsprechen die Codes den ISO-8859-1 Zeichen. Alle weiteren Einträge entstehen durch die Kompression und erhalten fortlaufende Codes ab <code>100</code>."}
+        </span>
+        <span class="popup-arrow" aria-hidden="true"></span>
+      </span>
+    </h3>
     <table class="table table-striped table-hover table-bordered">
       <thead>
         <tr>
@@ -157,7 +215,7 @@
       </thead>
       <tbody>
         {#each dictionary as entry}
-          <tr>
+          <tr class:highlight-row={entry.code === hoveredDictCode}>
             <td>{entry.char}</td>
             <td>{entry.code}</td>
           </tr>
@@ -182,12 +240,34 @@
         </tr>
       </thead>
       <tbody>
-        {#each steps as s}
+        {#each steps as s, i}
           <tr>
-            <td>{s[1]}</td>
+            <td class:highlight-cell={i === hoveredStepIndex}>
+              {s[1]}
+            </td>
             <td>{s[2]}</td>
             <td>{s[3]}</td>
-            <td>{s[4]}</td>
+            <td
+              class:highlight-cell={i === hoveredStepIndex}
+              class:popup-active={s[4] !== "–"}
+              onmouseenter={() => {
+                if (s[4] === "–") return;
+                hoveredStepIndex = i;
+                hoveredDictCode = s[4];
+              }}
+              onmouseleave={() => {
+                hoveredStepIndex = null;
+                hoveredDictCode = null;
+              }}
+            >
+              {s[4]}
+              {#if s[4] !== "–"}
+                <span class="popup-bubble" aria-hidden="true">
+                  {@html getStepPopupText(s)}
+                </span>
+                <span class="popup-arrow" aria-hidden="true"></span>
+              {/if}
+            </td>
           </tr>
         {/each}
       </tbody>
@@ -200,6 +280,11 @@
     padding: 1rem;
     border-radius: 15px;
     background-color: var(--bs-secondary-bg);
+  }
+
+  .io-arrow {
+    font-size: 2rem;
+    color: #666666;
   }
 
   .dictionary {
@@ -215,5 +300,104 @@
     border-radius: 15px;
     background-color: #e9e9e9;
     width: 70%;
+  }
+
+  .output-code span {
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 0 2px;
+  }
+
+  .output-code span.hovered {
+    background-color: #ffe7a3;
+  }
+
+  .highlight-cell {
+    background-color: #ffe7a3 !important;
+    font-weight: 600;
+  }
+
+  .dictionary .highlight-row td {
+    background-color: #ffe7a3 !important;
+    font-weight: 600;
+  }
+
+  .help-popup {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.1rem;
+    height: 1.1rem;
+    margin-left: 0.4rem;
+    border-radius: 50%;
+    background-color: #1f1f1f;
+    color: #ffffff;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    cursor: help;
+    position: relative;
+    vertical-align: middle;
+  }
+
+  td.popup-active,
+  .help-popup {
+    position: relative;
+  }
+
+  .popup-bubble {
+    position: absolute;
+    left: 50%;
+    bottom: 120%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: 30rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    box-sizing: border-box;
+    background-color: #1f1f1f;
+    color: #ffffff;
+    padding: 0.35rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 6;
+  }
+
+  .popup-arrow {
+    position: absolute;
+    left: 50%;
+    bottom: 105%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: #1f1f1f transparent transparent transparent;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 6;
+  }
+
+  td.popup-active:hover .popup-bubble,
+  td.popup-active:hover .popup-arrow,
+  .help-popup:hover .popup-bubble,
+  .help-popup:hover .popup-arrow {
+    opacity: 1;
+  }
+
+  @media (max-width: 640px) {
+    .popup-bubble {
+      position: fixed;
+      left: 50%;
+      bottom: 1rem;
+      top: auto;
+      transform: translateX(-50%);
+      width: calc(100vw - 2rem);
+      max-width: 36rem;
+      z-index: 1000;
+    }
+
+    .popup-arrow {
+      display: none;
+    }
   }
 </style>
