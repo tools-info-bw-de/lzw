@@ -2,6 +2,8 @@
 
 Eine Webseite, die die LZW Kompression Schritt für Schritt visualisiert. Basiert auf den Materialien vom ZSL BW. Unterstützt die ISO-8859-1 Zeichentabelle (westeuropäisch erweiterter ASCII).
 
+Aktuell zu finden unter tools.info-bw.de/lzw
+
 # Entwickeln
 
 - Installiere Node.js (am besten 24+)
